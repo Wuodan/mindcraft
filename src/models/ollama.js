@@ -79,7 +79,14 @@ export class Ollama {
         const url = new URL(endpoint, this.url);
         let method = 'POST';
         let headers = new Headers();
-        const request = new Request(url, { method, headers, body: JSON.stringify(body) });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 180000);
+        const request = new Request(url, {
+            method,
+            headers,
+            body: JSON.stringify(body),
+            signal: controller.signal,
+        });
         let data = null;
         try {
             const res = await fetch(request);
@@ -91,6 +98,12 @@ export class Ollama {
         } catch (err) {
             console.error('Failed to send Ollama request.');
             console.error(err);
+            if (err?.name === 'AbortError') {
+                throw new Error(`Ollama request timed out`);
+            }
+            throw err;
+        } finally {
+            clearTimeout(timeout);
         }
         return data;
     }
