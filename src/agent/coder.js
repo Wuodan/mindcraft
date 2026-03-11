@@ -214,6 +214,8 @@ export class Coder {
                 break;
             }
         }
+        // Models often emit "export function ..." which is invalid in this execution wrapper.
+        code = code.replace(/^\s*export\s+(?=(async\s+)?function\b)/gm, '');
         return code;
     }
 
