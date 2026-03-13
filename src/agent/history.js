@@ -1,7 +1,17 @@
-import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
-import { NPCData } from './npc/data.js';
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'fs';
 import settings from './settings.js';
 
+function sanitizeMemoryText(text) {
+    if (!text) return '';
+
+    return text
+        .replace(/<think>/gi, '')
+        .replace(/<\/think>/gi, '')
+        .replace(/System output:/gi, '')
+        .replace(/Your output:/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 
 export class History {
     constructor(agent) {
@@ -32,7 +42,7 @@ export class History {
 
     async summarizeMemories(turns) {
         console.log("Storing memories...");
-        this.memory = await this.agent.prompter.promptMemSaving(turns);
+        this.memory = sanitizeMemoryText(await this.agent.prompter.promptMemSaving(turns));
 
         if (this.memory.length > 500) {
             this.memory = this.memory.slice(0, 500);
@@ -104,7 +114,7 @@ export class History {
                 return null;
             }
             const data = JSON.parse(readFileSync(this.memory_fp, 'utf8'));
-            this.memory = data.memory || '';
+            this.memory = sanitizeMemoryText(data.memory || '');
             this.turns = data.turns || [];
             console.log('Loaded memory:', this.memory);
             return data;
