@@ -1,6 +1,6 @@
-const STOPPED = 0
-const ACTIVE = 1
-const PAUSED = 2
+const STOPPED = 0;
+const ACTIVE = 1;
+const PAUSED = 2;
 export class SelfPrompter {
     constructor(agent) {
         this.agent = agent;
@@ -37,7 +37,7 @@ export class SelfPrompter {
     }
 
     async handleLoad(prompt, state) {
-        if (state == undefined)
+        if (state === undefined)
             state = STOPPED;
         this.state = state;
         this.prompt = prompt;
@@ -58,12 +58,21 @@ export class SelfPrompter {
             console.warn('Self-prompt loop is already active. Ignoring request.');
             return;
         }
-        console.log('starting self-prompt loop')
+        console.log('starting self-prompt loop');
         this.loop_active = true;
         let no_command_count = 0;
         const MAX_NO_COMMAND = 3;
         while (!this.interrupt) {
-            const msg = `You are self-prompting with the goal: '${this.prompt}'. Your next response MUST contain a command with this syntax: !commandName. Respond:`;
+            const msg = [
+                `You are self-prompting with the goal: '${this.prompt}'.`,
+                'Respond with exactly one valid command from the command docs and nothing else.',
+                'If the command requires args, include every required arg.',
+                'Do not write placeholder commands like !commandName.',
+                'Do not explain your choice.',
+                'If you are unsure what to do next, prefer one of these safe commands:',
+                '!inventory, !entities, !nearbyBlocks, !stats.',
+                'Respond:'
+            ].join(' ');
             
             let used_command = await this.agent.handleMessage('system', msg, -1);
             if (!used_command) {
@@ -81,7 +90,7 @@ export class SelfPrompter {
                 await new Promise(r => setTimeout(r, this.cooldown));
             }
         }
-        console.log('self prompt loop stopped')
+        console.log('self prompt loop stopped');
         this.loop_active = false;
         this.interrupt = false;
     }
@@ -109,7 +118,7 @@ export class SelfPrompter {
         // you can call this without await if you don't need to wait for it to finish
         if (this.interrupt)
             return;
-        console.log('stopping self-prompt loop')
+        console.log('stopping self-prompt loop');
         this.interrupt = true;
         while (this.loop_active) {
             await new Promise(r => setTimeout(r, 500));
